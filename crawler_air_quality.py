@@ -73,7 +73,7 @@ def crawl_air_quality_bupt():
     except:
         print("未能连接数据库")
         time.sleep(300)
-    cur.execute("insert into all_quality(Position, Location, time, PM25) VALUES('%s','%s','%s','%d')"%('bupt',str(data['longitude'])[0:6]+"_0"+str(data['latitude'])[0:5],now.strftime('%Y%m%d%H%M%S'),round(data['pm25'])))
+    cur.execute("insert into bupt_air(Position, Location, time, PM25) VALUES('%s','%s','%s','%d')"%('bupt',str(data['longitude'])[0:6]+"_0"+str(data['latitude'])[0:5],now.strftime('%Y%m%d%H%M%S'),round(data['pm25'])))
     conn.commit()            
     cur.close()
     conn.close()
