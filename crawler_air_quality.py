@@ -39,18 +39,19 @@ def crawl_air_quality_beijing():
     try:
         conn=pymysql.connect(user='root',passwd='123123',host='10.102.0.194',db='image')
         cur = conn.cursor()
+        for air_quality in air_quality_all:
+            s=air_quality['pointname']
+            s_name=""
+            for s_temp in lazy_pinyin(s):
+                s_name+=s_temp
+            cur.execute("insert into all_quality(Position, Location, time, AQI, PM25, PM10) VALUES('%s','%s','%s','%d','%d','%d')"%(s_name,air_quality['longitude'][0:10]+"_0"+air_quality['latitude'][0:9],now.strftime('%Y%m%d%H%M%S'),int(air_quality['aqi']),int(air_quality['pm2_5']),int(air_quality['pm10'])))
+            conn.commit()            
+        cur.close()
+        conn.close()
     except:
         print("未能连接数据库")
-        time.sleep(300) 
-    for air_quality in air_quality_all:
-        s=air_quality['pointname']
-        s_name=""
-        for s_temp in lazy_pinyin(s):
-            s_name+=s_temp
-        cur.execute("insert into all_quality(Position, Location, time, AQI, PM25, PM10) VALUES('%s','%s','%s','%d','%d','%d')"%(s_name,air_quality['longitude'][0:6]+"_0"+air_quality['latitude'][0:5],now.strftime('%Y%m%d%H%M%S'),int(air_quality['aqi']),int(air_quality['pm2_5']),int(air_quality['pm10'])))
-        conn.commit()            
-    cur.close()
-    conn.close()
+        print("all") 
+    
 
 def crawl_air_quality_bupt():
     url="http://220.195.3.56:7088/SensorApp_bupt/user/getLogin"
@@ -65,25 +66,32 @@ def crawl_air_quality_bupt():
     da=json.loads(r.text)
     data=da['list'][0]
     path="D:\\air_quality\\bupt.txt"
-    with open(path, 'a') as f:
-        f.write(str(round(data['pm25']))+"   "+now.strftime('%Y%m%d%H%M%S')+'\n')
     try:
-        conn=pymysql.connect(user='root',passwd='123123',host='10.102.0.194',db='image')
-        cur = conn.cursor()
+        data_pm=round(data['pm25'])
+        with open(path, 'a') as f:
+            f.write(str(data_pm)+"   "+now.strftime('%Y%m%d%H%M%S')+'\n')
+        try:
+            conn=pymysql.connect(user='root',passwd='123123',host='10.102.0.194',db='image')
+            cur = conn.cursor()
+            str_location="116.357996_039.960736"
+            cur.execute("insert into all_quality(Position, Location, time,AQI, PM25, PM10) VALUES('%s','%s','%s','%d','%d','%d')"%('bupt',str_location, now.strftime('%Y%m%d%H%M%S'),10000,data_pm,10000))
+            conn.commit()       
+            cur.close()
+            conn.close()
+        except:
+            print("未能连接数据库")
+            print("bupt")      
     except:
-        print("未能连接数据库")
-        time.sleep(300)
-    cur.execute("insert into bupt_air(Position, Location, time, PM25) VALUES('%s','%s','%s','%d')"%('bupt',str(data['longitude'])[0:6]+"_0"+str(data['latitude'])[0:5],now.strftime('%Y%m%d%H%M%S'),round(data['pm25'])))
-    conn.commit()            
-    cur.close()
-    conn.close()
+        print("no data!")
+        print(now.strftime('%Y%m%d%H%M%S')+'\n')
+    
     
 
-def crawl_air_quality(inc=1800):
+def crawl_air_quality(inc=500):
     while(True):
         crawl_air_quality_beijing()
         crawl_air_quality_bupt()
         time.sleep(inc)
 
 
-crawl_air_quality(1800)
+crawl_air_quality(500)
